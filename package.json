@@ -10,8 +10,8 @@
 		"build": "tspc",
 		"build-watch": "tspc -w",
 		"prepublishOnly": "npm run build",
-		"devlink": "cd devlink && npm link"
-		,"prepare": "npm run build"
+		"devlink": "cd devlink && npm link",
+		"prepare": "npm run build"
 	},
 	"keywords": [],
 	"author": "osyrisrblx",
