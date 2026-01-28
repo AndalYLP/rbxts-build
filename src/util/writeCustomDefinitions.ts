@@ -1,6 +1,6 @@
 import assert from "assert";
 import fs from "fs/promises";
-import ts, { NodeArray } from "typescript";
+import ts, { Expression, NodeArray, SourceFile } from "typescript";
 import { CLIError } from "../errors/CLIError";
 import { createParseConfigFileHost } from "./createParseConfigFileHost";
 
@@ -43,11 +43,23 @@ export function writeCustomDefinitions(customDefinitionPath: string, outPath: st
 			return;
 		}
 
+		const otherStatements: Array<ts.Statement> = [];
 		const overrideInterfaceMap = new Map<string, ts.InterfaceDeclaration>();
 		for (const statement of customDefinitionSourceFile.statements) {
 			if (ts.isInterfaceDeclaration(statement)) {
 				overrideInterfaceMap.set(statement.name.text, statement);
+				continue;
 			}
+
+			if (
+				ts.isModuleDeclaration(statement) &&
+				ts.isIdentifier(statement.name) &&
+				statement.name.text === "global"
+			) {
+				continue;
+			}
+
+			otherStatements.push(statement);
 		}
 
 		const out: Array<ts.Statement> = [];
@@ -73,6 +85,15 @@ export function writeCustomDefinitions(customDefinitionPath: string, outPath: st
 					typeParameters: overrideData?.typeParameters ?? statement.typeParameters,
 				}),
 			);
+		}
+
+		for (const statement of otherStatements) {
+			if (ts.isImportDeclaration(statement)) {
+				out.push(recreateStatement(statement));
+				continue;
+			}
+
+			moduleBlock.push(recreateStatement(statement));
 		}
 
 		out.push(
@@ -135,6 +156,60 @@ function handleNonPropertyOverrides(name: string, overrides: Array<ts.TypeElemen
 	}
 
 	return result;
+}
+
+function recreateStatement(statement: ts.Statement): ts.Statement {
+	if (ts.isImportDeclaration(statement)) {
+		return ts.factory.createImportDeclaration(
+			statement.modifiers,
+			statement.importClause
+				? ts.factory.createImportClause(
+						statement.importClause.isTypeOnly,
+						statement.importClause.name
+							? ts.factory.createIdentifier(statement.importClause.name.getText())
+							: undefined,
+						statement.importClause.namedBindings,
+					)
+				: undefined,
+			ts.factory.createStringLiteral((statement.moduleSpecifier as ts.StringLiteral).text),
+		);
+	}
+
+	if (ts.isFunctionDeclaration(statement)) {
+		return ts.factory.createFunctionDeclaration(
+			statement.modifiers?.filter(m => m.kind !== ts.SyntaxKind.DeclareKeyword),
+			statement.asteriskToken,
+			statement.name ? ts.factory.createIdentifier(statement.name.getText()) : undefined,
+			statement.typeParameters?.map(tp =>
+				ts.factory.createTypeParameterDeclaration(undefined, tp.name.getText(), tp.constraint, tp.default),
+			),
+			statement.parameters.map(p =>
+				ts.factory.createParameterDeclaration(
+					p.modifiers,
+					p.dotDotDotToken,
+					p.name.getText(),
+					p.questionToken,
+					p.type ? ts.factory.createTypeReferenceNode(p.type.getText(), undefined) : undefined,
+					p.initializer,
+				),
+			),
+			statement.type ? ts.factory.createTypeReferenceNode(statement.type.getText(), undefined) : undefined,
+			undefined,
+		);
+	}
+
+	if (ts.isTypeAliasDeclaration(statement)) {
+		return ts.factory.createTypeAliasDeclaration(
+			statement.modifiers,
+			ts.factory.createIdentifier(statement.name.getText()),
+			statement.typeParameters?.map(tp =>
+				ts.factory.createTypeParameterDeclaration(undefined, tp.name.getText(), tp.constraint, tp.default),
+			),
+			ts.factory.createTypeReferenceNode(statement.type.getText(), undefined),
+		);
+	}
+
+	throw new Error(`Statement of kind ${statement.kind} not supported.`);
 }
 
 function overridePropertyTypes(type: ts.TypeNode, override?: ts.TypeNode): [ts.TypeNode, boolean] {
