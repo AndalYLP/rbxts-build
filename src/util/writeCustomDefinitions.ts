@@ -1,6 +1,6 @@
 import assert from "assert";
 import fs from "fs/promises";
-import ts, { Expression, NodeArray, SourceFile } from "typescript";
+import ts, { NodeArray } from "typescript";
 import { CLIError } from "../errors/CLIError";
 import { createParseConfigFileHost } from "./createParseConfigFileHost";
 
