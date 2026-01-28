@@ -29,6 +29,7 @@ You can use `rbxts-build init` to automatically setup these scripts for you. It'
 	- `rojo build --output game.rbxl`
 	- Uses `lune` to generate a `src/services.d.ts` file for indexing existing children in roblox-ts.
 		- [Refer to this guide for more information](https://roblox-ts.com/docs/guides/indexing-children/)
+	- Use "customDefinitionsLocation" setting to override existing children types
 
 These scripts should be structured in your `package.json` file as:
 ```json
@@ -56,6 +57,8 @@ Once you've started working, it's convenient to use `npm restart` (or `npm res` 
 	"rojoBuildArgs": ["--output", "game.rbxl"],
 	// provide a relative file location for the sync command output, default provided below
 	"syncLocation": "src/services.d.ts",
+	// provide a relative file location for sync command overrides, default is undefined
+	"customDefinitionsLocation": undefined,
 	// use rbxtsc-dev instead of rbxtsc, default provided below
 	"dev": false,
 	// WSL-only, use .exe versions of rojo and lune, default provided below
