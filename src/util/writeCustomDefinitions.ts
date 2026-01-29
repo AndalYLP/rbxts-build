@@ -1,6 +1,6 @@
 import assert from "assert";
 import fs from "fs/promises";
-import ts, { NodeArray } from "typescript";
+import ts, { NodeArray, TypeElement } from "typescript";
 import { CLIError } from "../errors/CLIError";
 import { createParseConfigFileHost } from "./createParseConfigFileHost";
 
@@ -252,10 +252,10 @@ function overridePropertyTypes(type: ts.TypeNode, override?: ts.TypeNode): [ts.T
 			overrideIndex
 				.getChildren()[1]
 				.getChildren()
-				.filter(value => ts.isTypeElement(value)),
+				.filter(value => ts.isTypeElement(value)) as Array<TypeElement>,
 		);
 
-		const result = getOverridedTypeElements(memberElements, overrideMemberElements);
+		const result = getOverridedTypeElements(memberElements as Array<TypeElement>, overrideMemberElements);
 
 		const typeLiteralNode = ts.factory.createTypeLiteralNode(result);
 		return [
