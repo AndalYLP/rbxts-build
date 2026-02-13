@@ -73,6 +73,7 @@ export function writeCustomDefinitions(customDefinitionPath: string, outPath: st
 
 			const interfaceName = statement.name.text;
 			const overrideData = extractInterfaceProperties(overrideInterfaceMap.get(interfaceName));
+			overrideInterfaceMap.delete(interfaceName);
 
 			const members = getOverridedTypeElements(statement.members, overrideData?.members);
 
@@ -83,6 +84,18 @@ export function writeCustomDefinitions(customDefinitionPath: string, outPath: st
 					modifiers: overrideData?.modifiers ?? statement.modifiers,
 					name: interfaceName,
 					typeParameters: overrideData?.typeParameters ?? statement.typeParameters,
+				}),
+			);
+		}
+
+		for (const [name, overrideInterface] of overrideInterfaceMap) {
+			moduleBlock.push(
+				createInterfaceDeclaration({
+					members: [...overrideInterface.members],
+					heritageClauses: overrideInterface.heritageClauses,
+					modifiers: overrideInterface.modifiers,
+					name: name,
+					typeParameters: overrideInterface.typeParameters,
 				}),
 			);
 		}
