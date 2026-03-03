@@ -89,9 +89,11 @@ export function writeCustomDefinitions(customDefinitionPath: string, outPath: st
 		}
 
 		for (const [name, overrideInterface] of overrideInterfaceMap) {
+			const members = getOverridedTypeElements(overrideInterface.members);
+
 			moduleBlock.push(
 				createInterfaceDeclaration({
-					members: [...overrideInterface.members],
+					members: members,
 					heritageClauses: overrideInterface.heritageClauses,
 					modifiers: overrideInterface.modifiers,
 					name: name,
@@ -177,7 +179,7 @@ function recreateStatement(statement: ts.Statement): ts.Statement {
 			statement.modifiers,
 			statement.importClause
 				? ts.factory.createImportClause(
-						statement.importClause.isTypeOnly,
+						statement.importClause.phaseModifier,
 						statement.importClause.name
 							? ts.factory.createIdentifier(statement.importClause.name.getText())
 							: undefined,
