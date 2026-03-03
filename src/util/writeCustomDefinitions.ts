@@ -179,7 +179,7 @@ function recreateStatement(statement: ts.Statement): ts.Statement {
 			statement.modifiers,
 			statement.importClause
 				? ts.factory.createImportClause(
-						statement.importClause.phaseModifier,
+						statement.importClause.isTypeOnly,
 						statement.importClause.name
 							? ts.factory.createIdentifier(statement.importClause.name.getText())
 							: undefined,
